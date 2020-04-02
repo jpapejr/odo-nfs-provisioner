@@ -5,3 +5,4 @@
 3. SCC
 4. `oc adm policy add-scc-to-user nfs-provisioner -z nfs-provisioner`
 5. Deployment
+6. StorageClass
