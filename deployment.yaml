@@ -1,0 +1,88 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nfs-provisioner
+  namespace: dev-nfs
+spec:
+  replicas: 1 #can only be one, don't scale beyond
+  selector:
+    matchLabels:
+      app: nfs-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-provisioner
+    spec:
+      restartPolicy: Always
+      serviceAccountName: nfs-provisioner
+      containers:
+        - resources: {}
+          name: nfs-provisioner
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: SERVICE_NAME
+              value: nfs-provisioner
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          securityContext:
+            capabilities:
+              add:
+                - DAC_READ_SEARCH
+                - SYS_RESOURCE
+          ports:
+            - name: nfs
+              containerPort: 2049
+              protocol: TCP
+            - name: nfs-udp
+              containerPort: 2049
+              protocol: UDP
+            - name: nlockmgr
+              containerPort: 32803
+              protocol: TCP
+            - name: nlockmgr-udp
+              containerPort: 32803
+              protocol: UDP
+            - name: mountd
+              containerPort: 20048
+              protocol: TCP
+            - name: mountd-udp
+              containerPort: 20048
+              protocol: UDP
+            - name: rquotad
+              containerPort: 875
+              protocol: TCP
+            - name: rquotad-udp
+              containerPort: 875
+              protocol: UDP
+            - name: rpcbind
+              containerPort: 111
+              protocol: TCP
+            - name: rpcbind-udp
+              containerPort: 111
+              protocol: UDP
+            - name: statd
+              containerPort: 662
+              protocol: TCP
+            - name: statd-udp
+              containerPort: 662
+              protocol: UDP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: export-volume
+              mountPath: /export
+          terminationMessagePolicy: File
+          image: 'quay.io/kubernetes_incubator/nfs-provisioner:latest'
+          args:
+            - '-provisioner=dev.kp.org/nfs'
+      serviceAccount: nfs-provisioner
+      volumes:
+        - name: export-volume
+          persistentVolumeClaim:
+            claimName: nfs-dev
